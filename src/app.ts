@@ -3,6 +3,7 @@ import * as socketio from "socket.io-client";
 
 import { TypedEmitter } from "./common";
 import { config } from "./config";
+import { format } from "./formatter";
 
 const webInput = document.getElementById("input") as HTMLInputElement;
 const webSubmit = document.getElementById("send") as HTMLInputElement;
@@ -10,7 +11,7 @@ const webOutput = document.getElementById("output") as HTMLDivElement;
 
 function writeOutput(message: string) {
     const d = document.createElement("div");
-    d.innerText = message;
+    d.innerHTML = message; // TODO: This isn't secure, figure out special formatting rules
     webOutput.appendChild(d);
 }
 
@@ -73,7 +74,13 @@ function connect() {
     });
 
     tsock.on("message", (data) => {
-        writeOutput(`[${data.target}] ${data.message}`);
+        let message = data.message;
+
+        if (data.extendedFormat) {
+            message = format(data.extendedFormat, data.extendedContent);
+        }
+
+        writeOutput(`[${data.target}] ${message}`);
         if (data.meta) {
             writeOutput(`>META> ${JSON.stringify(data.meta)}`);
         }
